@@ -261,7 +261,7 @@ void FIFOController::readAction(Action& action_a, Action& action_b) {
 	  if (m_environment.isTerminal()) {	
 		action_a = PLAYER_A_NOOP;
 		action_b = PLAYER_B_NOOP;
-		return;
+		exit(EXIT_SUCCESS);
 	  }
 	  clearerr(m_fin);
 	  goto start;
