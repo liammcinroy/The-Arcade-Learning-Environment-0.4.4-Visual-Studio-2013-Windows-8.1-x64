@@ -121,7 +121,6 @@ void FIFOController::handshake() {
   // Read in agent's response
   char in_buffer [1024];
   fgets (in_buffer, sizeof(in_buffer), m_fin);
-
   // Parse response: send_screen, send_ram, <obsolete>, send_RL
   char * token = strtok (in_buffer,",\n");
   m_send_screen = atoi(token);
@@ -138,13 +137,15 @@ void FIFOController::openNamedPipes() {
   m_fout = fopen("ale_fifo_out", "w");
   if (m_fout == NULL) {
     std::cerr << "Missing output pipe: ale_fifo_out" << std::endl;
+	perror("File error:");
     exit(1);
   }
 
   m_fin = fopen("ale_fifo_in", "r");
 
   if (m_fin == NULL) {
-    std::cerr << "Missing output pipe: ale_fifo_out" << std::endl;
+    std::cerr << "Missing input pipe: ale_fifo_in" << std::endl;
+	perror("File error:");
     exit(1);
   }
 }
@@ -255,11 +256,19 @@ void FIFOController::sendRL() {
 void FIFOController::readAction(Action& action_a, Action& action_b) {
   // Read the new action from the pipe, as a comma-separated pair
   char in_buffer[2048];
-  fgets (in_buffer, sizeof(in_buffer), m_fin);
- 
+  start:
+  if (NULL == fgets(in_buffer, sizeof(in_buffer), m_fin)) {
+	  if (m_environment.isTerminal()) {	
+		action_a = PLAYER_A_NOOP;
+		action_b = PLAYER_B_NOOP;
+		return;
+	  }
+	  clearerr(m_fin);
+	  goto start;
+  }
   char * token = strtok (in_buffer,",\n");
   action_a = (Action)atoi(token);
-
+  cout << token << endl;
   token = strtok (NULL,",\n");
   action_b = (Action)atoi(token);
 }
